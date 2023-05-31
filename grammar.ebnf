@@ -1,0 +1,61 @@
+@@grammar::Zahlen
+
+start::Program = { statements+:stmts }+ $;
+
+intexpr =
+    | left:intexpr op:('+' | '-') ~ right:int_term
+    | int_term
+    ;
+
+
+int_term =
+    | left:int_term op:('*' | '/') ~ right:int_factor
+    | int_factor
+    ;
+
+int_factor =
+    | integer
+    | varname
+    ;
+
+boolexpr =
+    | left:boolexpr op:('&&' | '||') right:bool_subexpr
+    | bool_subexpr
+    ;
+
+bool_subexpr =
+    | left:intexpr op:('==' | '!=' | '>' | '>=' | '<' | '<=') right:intexpr
+    | bool_factor
+    ;
+
+bool_factor =
+    | 'true'
+    | 'false'
+    ;
+
+stmts =
+    | stmt:labled_statement ';'
+    | stmt:stmt ';'
+    ;
+
+labled_statement::LabledStatement = label:label':' stmt:stmt;
+
+stmt =
+    | assignment
+    | 'skip'
+    | ifelse
+    | goto
+    | print
+    ;
+
+assignment::Assignment = varname:varname '=' expr:intexpr;
+ifelse::IfElse = 'ifelse' '(' ~ pred:boolexpr ',' true_stmt:stmt ',' false_stmt:stmt ')';
+goto::GoTo = 'goto' label:label;
+print::Print = 'print' '(' varname:varname ')';
+
+integer = /\d+/;
+
+varname = identifier;
+label = identifier;
+
+identifier = /[a-zA-Z_][a-zA-Z0-9_]*/;
