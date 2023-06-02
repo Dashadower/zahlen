@@ -32,7 +32,7 @@ class ZahlenBuffer(Buffer):
             whitespace=None,
             nameguard=None,
             comments_re=None,
-            eol_comments_re=None,
+            eol_comments_re='#.*?$',
             ignorecase=False,
             namechars='',
             parseinfo=False,
@@ -49,7 +49,7 @@ class ZahlenParser(Parser):
             whitespace=None,
             nameguard=None,
             comments_re=None,
-            eol_comments_re=None,
+            eol_comments_re='#.*?$',
             ignorecase=False,
             namechars='',
             parseinfo=False,
@@ -74,71 +74,97 @@ class ZahlenParser(Parser):
         )
 
     @tatsumasu()
-    @leftrec
-    def _intexpr_(self):  # noqa
+    @nomemo
+    def _expression_(self):  # noqa
         with self._choice():
             with self._option():
                 self._intexpr_()
-                self.name_last_node('left')
-                with self._group():
-                    with self._choice():
-                        with self._option():
-                            self._token('+')
-                        with self._option():
-                            self._token('-')
-                        self._error(
-                            'expecting one of: '
-                            "'+' '-'"
-                        )
-                self.name_last_node('op')
-                self._cut()
-                self._int_term_()
-                self.name_last_node('right')
-
-                self._define(
-                    ['left', 'op', 'right'],
-                    []
-                )
             with self._option():
-                self._int_term_()
+                self._boolexpr_()
             self._error(
                 'expecting one of: '
-                '<int_factor> <int_term> <intexpr>'
+                '<addition_expr> <boolexpr> <comparison>'
+                '<intexpr> <logical_expr>'
+                '<multiplication>'
             )
 
     @tatsumasu()
-    @leftrec
-    def _int_term_(self):  # noqa
+    @nomemo
+    def _intexpr_(self):  # noqa
         with self._choice():
             with self._option():
-                self._int_term_()
-                self.name_last_node('left')
-                with self._group():
-                    with self._choice():
-                        with self._option():
-                            self._token('*')
-                        with self._option():
-                            self._token('/')
-                        self._error(
-                            'expecting one of: '
-                            "'*' '/'"
-                        )
-                self.name_last_node('op')
-                self._cut()
-                self._int_factor_()
-                self.name_last_node('right')
+                self._addition_expr_()
+            with self._option():
+                self._multiplication_()
+            self._error(
+                'expecting one of: '
+                '<addition_expr> <int_factor>'
+                '<multiplication> <multiplication_expr>'
+            )
 
-                self._define(
-                    ['left', 'op', 'right'],
-                    []
+    @tatsumasu('BinaryIntExpr')
+    @nomemo
+    def _addition_expr_(self):  # noqa
+        self._multiplication_()
+        self.name_last_node('left')
+        with self._group():
+            with self._choice():
+                with self._option():
+                    self._token('+')
+                with self._option():
+                    self._token('-')
+                self._error(
+                    'expecting one of: '
+                    "'+' '-'"
                 )
+        self.name_last_node('op')
+        self._cut()
+        self._intexpr_()
+        self.name_last_node('right')
+
+        self._define(
+            ['left', 'op', 'right'],
+            []
+        )
+
+    @tatsumasu()
+    @leftrec
+    def _multiplication_(self):  # noqa
+        with self._choice():
+            with self._option():
+                self._multiplication_expr_()
             with self._option():
                 self._int_factor_()
             self._error(
                 'expecting one of: '
-                '<int_factor> <int_term> <integer>'
-                '<varname>'
+                '<int_factor> <integer> <multiplication>'
+                '<multiplication_expr> <varname>'
             )
+
+    @tatsumasu('BinaryIntExpr')
+    @nomemo
+    def _multiplication_expr_(self):  # noqa
+        self._multiplication_()
+        self.name_last_node('left')
+        with self._group():
+            with self._choice():
+                with self._option():
+                    self._token('*')
+                with self._option():
+                    self._token('/')
+                self._error(
+                    'expecting one of: '
+                    "'*' '/'"
+                )
+        self.name_last_node('op')
+        self._cut()
+        self._int_factor_()
+        self.name_last_node('right')
+
+        self._define(
+            ['left', 'op', 'right'],
+            []
+        )
 
     @tatsumasu()
     def _int_factor_(self):  # noqa
@@ -153,123 +179,120 @@ class ZahlenParser(Parser):
             )
 
     @tatsumasu()
-    @leftrec
     def _boolexpr_(self):  # noqa
         with self._choice():
             with self._option():
-                self._boolexpr_()
-                self.name_last_node('left')
-                with self._group():
-                    with self._choice():
-                        with self._option():
-                            self._token('&&')
-                        with self._option():
-                            self._token('||')
-                        self._error(
-                            'expecting one of: '
-                            "'&&' '||'"
-                        )
-                self.name_last_node('op')
-                self._bool_subexpr_()
-                self.name_last_node('right')
-
-                self._define(
-                    ['left', 'op', 'right'],
-                    []
-                )
+                self._logical_expr_()
             with self._option():
-                self._bool_subexpr_()
+                self._comparison_()
             self._error(
                 'expecting one of: '
-                '<bool_factor> <bool_subexpr> <boolexpr>'
-                '<int_term> <intexpr>'
+                '<bool_factor> <comparison>'
+                '<comparison_expr> <logical_expr>'
             )
 
+    @tatsumasu('BinaryBoolExpr')
+    def _logical_expr_(self):  # noqa
+        self._comparison_()
+        self.name_last_node('left')
+        with self._group():
+            with self._choice():
+                with self._option():
+                    self._token('&&')
+                with self._option():
+                    self._token('||')
+                self._error(
+                    'expecting one of: '
+                    "'&&' '||'"
+                )
+        self.name_last_node('op')
+        self._boolexpr_()
+        self.name_last_node('right')
+
+        self._define(
+            ['left', 'op', 'right'],
+            []
+        )
+
     @tatsumasu()
-    def _bool_subexpr_(self):  # noqa
+    def _comparison_(self):  # noqa
         with self._choice():
             with self._option():
-                self._intexpr_()
-                self.name_last_node('left')
-                with self._group():
-                    with self._choice():
-                        with self._option():
-                            self._token('==')
-                        with self._option():
-                            self._token('!=')
-                        with self._option():
-                            self._token('>')
-                        with self._option():
-                            self._token('>=')
-                        with self._option():
-                            self._token('<')
-                        with self._option():
-                            self._token('<=')
-                        self._error(
-                            'expecting one of: '
-                            "'!=' '<' '<=' '==' '>' '>='"
-                        )
-                self.name_last_node('op')
-                self._intexpr_()
-                self.name_last_node('right')
-
-                self._define(
-                    ['left', 'op', 'right'],
-                    []
-                )
+                self._comparison_expr_()
             with self._option():
                 self._bool_factor_()
             self._error(
                 'expecting one of: '
-                "'false' 'true' <bool_factor>"
-                '<int_factor> <int_term> <intexpr>'
+                '<addition_expr> <bool_factor>'
+                '<bool_value> <comparison_expr> <intexpr>'
+                '<multiplication>'
             )
+
+    @tatsumasu('BinaryBoolExpr')
+    def _comparison_expr_(self):  # noqa
+        self._intexpr_()
+        self.name_last_node('left')
+        with self._group():
+            with self._choice():
+                with self._option():
+                    self._token('==')
+                with self._option():
+                    self._token('!=')
+                with self._option():
+                    self._token('>=')
+                with self._option():
+                    self._token('<=')
+                with self._option():
+                    self._token('<')
+                with self._option():
+                    self._token('>')
+                self._error(
+                    'expecting one of: '
+                    "'!=' '<' '<=' '==' '>' '>='"
+                )
+        self.name_last_node('op')
+        self._expression_()
+        self.name_last_node('right')
+
+        self._define(
+            ['left', 'op', 'right'],
+            []
+        )
 
     @tatsumasu()
     def _bool_factor_(self):  # noqa
         with self._choice():
             with self._option():
+                self._bool_value_()
+            with self._option():
+                self._intexpr_()
+            self._error(
+                'expecting one of: '
+                "'false' 'true' <addition_expr>"
+                '<bool_value> <int_factor> <intexpr>'
+                '<multiplication> <multiplication_expr>'
+            )
+
+    @tatsumasu('Boolean')
+    def _bool_value_(self):  # noqa
+        with self._choice():
+            with self._option():
                 self._token('true')
+                self.name_last_node('value')
             with self._option():
                 self._token('false')
+                self.name_last_node('value')
             self._error(
                 'expecting one of: '
                 "'false' 'true'"
             )
 
-    @tatsumasu()
-    def _stmts_(self):  # noqa
-        with self._choice():
-            with self._option():
-                self._labled_statement_()
-                self.name_last_node('stmt')
-                self._token(';')
-
-                self._define(
-                    ['stmt'],
-                    []
-                )
-            with self._option():
-                self._stmt_()
-                self.name_last_node('stmt')
-                self._token(';')
-
-                self._define(
-                    ['stmt'],
-                    []
-                )
-            self._error(
-                'expecting one of: '
-                "'skip' <assignment> <goto> <ifelse>"
-                '<label> <labled_statement> <print>'
-                '<stmt>'
-            )
-
-    @tatsumasu('LabledStatement')
-    def _labled_statement_(self):  # noqa
+    @tatsumasu('LabeledStatement')
+    def _labeled_statement_(self):  # noqa
         self._label_()
         self.name_last_node('label')
         self._token(':')
+        self._cut()
         self._stmt_()
         self.name_last_node('stmt')
 
@@ -279,12 +302,30 @@ class ZahlenParser(Parser):
         )
 
     @tatsumasu()
+    def _stmts_(self):  # noqa
+        with self._choice():
+            with self._option():
+                self._stmt_()
+                self.name_last_node('@')
+                self._token(';')
+            with self._option():
+                self._labeled_statement_()
+                self.name_last_node('@')
+                self._token(';')
+            self._error(
+                'expecting one of: '
+                '<assignment> <goto> <identifier>'
+                '<ifelse> <label> <labeled_statement>'
+                '<print> <skip> <stmt>'
+            )
+
+    @tatsumasu()
     def _stmt_(self):  # noqa
         with self._choice():
             with self._option():
                 self._assignment_()
             with self._option():
-                self._token('skip')
+                self._skip_()
             with self._option():
                 self._ifelse_()
             with self._option():
@@ -297,18 +338,39 @@ class ZahlenParser(Parser):
                 '<assignment> <varname>'
             )
 
+    @tatsumasu()
+    def _assignment_rhs_(self):  # noqa
+        with self._choice():
+            with self._option():
+                self._intexpr_()
+            with self._option():
+                self._varname_()
+            with self._option():
+                self._integer_()
+            self._error(
+                'expecting one of: '
+                '<addition_expr> <identifier>'
+                '<int_factor> <integer> <intexpr>'
+                '<multiplication> <multiplication_expr>'
+                '<varname> \\d+'
+            )
+
     @tatsumasu('Assignment')
     def _assignment_(self):  # noqa
         self._varname_()
         self.name_last_node('varname')
         self._token('=')
-        self._intexpr_()
-        self.name_last_node('expr')
+        self._assignment_rhs_()
+        self.name_last_node('rhs')
 
         self._define(
-            ['expr', 'varname'],
+            ['rhs', 'varname'],
             []
         )
+
+    @tatsumasu('Skip')
+    def _skip_(self):  # noqa
+        self._token('skip')
 
     @tatsumasu('IfElse')
     def _ifelse_(self):  # noqa
@@ -354,13 +416,16 @@ class ZahlenParser(Parser):
             []
         )
 
-    @tatsumasu()
+    @tatsumasu('Integer')
     def _integer_(self):  # noqa
-        self._pattern('\\d+')
+        with self._group():
+            self._pattern('\\d+')
+        self.name_last_node('value')
 
-    @tatsumasu()
+    @tatsumasu('Variable')
     def _varname_(self):  # noqa
         self._identifier_()
+        self.name_last_node('varname')
 
     @tatsumasu()
     def _label_(self):  # noqa
@@ -375,10 +440,19 @@ class ZahlenSemantics:
     def start(self, ast):  # noqa
         return ast
 
+    def expression(self, ast):  # noqa
+        return ast
+
     def intexpr(self, ast):  # noqa
         return ast
 
-    def int_term(self, ast):  # noqa
+    def addition_expr(self, ast):  # noqa
+        return ast
+
+    def multiplication(self, ast):  # noqa
+        return ast
+
+    def multiplication_expr(self, ast):  # noqa
         return ast
 
     def int_factor(self, ast):  # noqa
@@ -387,22 +461,37 @@ class ZahlenSemantics:
     def boolexpr(self, ast):  # noqa
         return ast
 
-    def bool_subexpr(self, ast):  # noqa
+    def logical_expr(self, ast):  # noqa
+        return ast
+
+    def comparison(self, ast):  # noqa
+        return ast
+
+    def comparison_expr(self, ast):  # noqa
         return ast
 
     def bool_factor(self, ast):  # noqa
         return ast
 
-    def stmts(self, ast):  # noqa
+    def bool_value(self, ast):  # noqa
         return ast
 
-    def labled_statement(self, ast):  # noqa
+    def labeled_statement(self, ast):  # noqa
+        return ast
+
+    def stmts(self, ast):  # noqa
         return ast
 
     def stmt(self, ast):  # noqa
         return ast
 
+    def assignment_rhs(self, ast):  # noqa
+        return ast
+
     def assignment(self, ast):  # noqa
+        return ast
+
+    def skip(self, ast):  # noqa
         return ast
 
     def ifelse(self, ast):  # noqa

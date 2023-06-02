@@ -1,0 +1,13 @@
+fib_0 = 0;
+fib_1 = 1;
+n = 10;
+
+loop: ifelse(n == 0, goto end, skip);  # increment a 5 times
+print(fib_0);
+tmp = fib_0;
+fib_0 = fib_1;
+fib_1 = fib_1 + tmp;
+n = n - 1;
+goto loop;
+
+end: skip;

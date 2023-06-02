@@ -1,5 +1,5 @@
 
-A simple imperative language for integer expressions.
+Zahlen is simple imperative language for integer expressions. It's main purpose is 
 
 ```
 <intexpr> ::= Z

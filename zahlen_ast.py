@@ -38,15 +38,39 @@ class Program(ModelBase):
 
 
 @dataclass(eq=False)
-class LabledStatement(ModelBase):
+class BinaryIntExpr(ModelBase):
+    left: Any = None
+    op: Any = None
+    right: Any = None
+
+
+@dataclass(eq=False)
+class BinaryBoolExpr(ModelBase):
+    left: Any = None
+    op: Any = None
+    right: Any = None
+
+
+@dataclass(eq=False)
+class Boolean(ModelBase):
+    value: Any = None
+
+
+@dataclass(eq=False)
+class LabeledStatement(ModelBase):
     label: Any = None
     stmt: Any = None
 
 
 @dataclass(eq=False)
 class Assignment(ModelBase):
-    expr: Any = None
+    rhs: Any = None
     varname: Any = None
+
+
+@dataclass(eq=False)
+class Skip(ModelBase):
+    pass
 
 
 @dataclass(eq=False)
@@ -63,4 +87,14 @@ class GoTo(ModelBase):
 
 @dataclass(eq=False)
 class Print(ModelBase):
+    varname: Any = None
+
+
+@dataclass(eq=False)
+class Integer(ModelBase):
+    value: Any = None
+
+
+@dataclass(eq=False)
+class Variable(ModelBase):
     varname: Any = None

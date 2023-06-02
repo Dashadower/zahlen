@@ -1,61 +1,77 @@
 @@grammar::Zahlen
+@@eol_comments :: /#.*?$/
 
 start::Program = { statements+:stmts }+ $;
 
-intexpr =
-    | left:intexpr op:('+' | '-') ~ right:int_term
-    | int_term
+expression = intexpr
+    | boolexpr
     ;
 
+intexpr = addition_expr
+    | multiplication
+    ;
 
-int_term =
-    | left:int_term op:('*' | '/') ~ right:int_factor
+addition_expr::BinaryIntExpr = left:multiplication op:('+' | '-') ~ right:intexpr;
+
+multiplication = multiplication_expr
     | int_factor
     ;
 
-int_factor =
-    | integer
+multiplication_expr::BinaryIntExpr = left:multiplication op:('*' | '/') ~ right:int_factor;
+
+int_factor = integer
     | varname
     ;
 
-boolexpr =
-    | left:boolexpr op:('&&' | '||') right:bool_subexpr
-    | bool_subexpr
+boolexpr = logical_expr
+    | comparison
     ;
 
-bool_subexpr =
-    | left:intexpr op:('==' | '!=' | '>' | '>=' | '<' | '<=') right:intexpr
+logical_expr::BinaryBoolExpr = left:comparison op:('&&' | '||') right:boolexpr;
+
+comparison = comparison_expr
     | bool_factor
     ;
 
-bool_factor =
-    | 'true'
-    | 'false'
+comparison_expr::BinaryBoolExpr = left:intexpr op:('==' | '!=' | '>=' | '<=' | '<' | '>') right:expression
     ;
 
-stmts =
-    | stmt:labled_statement ';'
-    | stmt:stmt ';'
+bool_factor = bool_value
+    | intexpr
     ;
 
-labled_statement::LabledStatement = label:label':' stmt:stmt;
+bool_value::Boolean = value:'true'
+    | value:'false'
+    ;
+
+labeled_statement::LabeledStatement = label:label ':' ~ stmt:stmt;
+
+stmts = @:stmt ';'
+    | @:labeled_statement ';'
+    ;
 
 stmt =
     | assignment
-    | 'skip'
+    | skip
     | ifelse
     | goto
     | print
     ;
 
-assignment::Assignment = varname:varname '=' expr:intexpr;
+assignment_rhs = intexpr
+    | varname
+    | integer
+    ;
+
+assignment::Assignment = varname:varname '=' rhs:assignment_rhs;
+skip::Skip = 'skip';
 ifelse::IfElse = 'ifelse' '(' ~ pred:boolexpr ',' true_stmt:stmt ',' false_stmt:stmt ')';
 goto::GoTo = 'goto' label:label;
 print::Print = 'print' '(' varname:varname ')';
 
-integer = /\d+/;
+integer::Integer = value:(/\d+/);
 
-varname = identifier;
+varname::Variable = varname:identifier;
 label = identifier;
 
 identifier = /[a-zA-Z_][a-zA-Z0-9_]*/;
