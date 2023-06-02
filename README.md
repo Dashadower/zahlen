@@ -1,5 +1,5 @@
 
-Zahlen is simple imperative language for integer expressions. It's main purpose is to be a very simple language to 
+Zahlen is simple imperative language for integer expressions. Its main purpose is to be a very simple language to 
 practice implementing static analysis techniques.
 
 ## Example Program - fibonacci
