@@ -70,7 +70,7 @@ class ZahlenExpressionValueExecutor(ZahlenWalker):
             case ">=":
                 return left_value >= right_value
             case "<=":
-                return left_value < right_value
+                return left_value <= right_value
             case ">":
                 return left_value > right_value
             case "<":
@@ -82,7 +82,6 @@ class ZahlenExpressionValueExecutor(ZahlenWalker):
 
     def walk_Boolean(self, node: zast.Boolean) -> bool:
         if node.value == "true":
-            print("reached bool true")
             return True
         elif node.value == "false":
             return False
