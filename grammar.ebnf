@@ -72,7 +72,7 @@ array_element = array
     | int_expr
     ;
 
-array_index::ArrayIndex = varname:varname '[' index:int_expr ']';
+array_index::ArrayIndex = varname:(array_index | varname) '[' ~ index:int_expr ']';
 
 assignment::Assignment = varname:varname '=' ~ rhs:assignment_rhs;
 skip::Skip = 'skip';

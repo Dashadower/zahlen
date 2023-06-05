@@ -168,6 +168,7 @@ class ZahlenParser(Parser):
         )
 
     @tatsumasu()
+    @nomemo
     def _int_factor_(self):  # noqa
         with self._choice():
             with self._option():
@@ -405,10 +406,21 @@ class ZahlenParser(Parser):
             )
 
     @tatsumasu('ArrayIndex')
+    @leftrec
     def _array_index_(self):  # noqa
-        self._varname_()
+        with self._group():
+            with self._choice():
+                with self._option():
+                    self._array_index_()
+                with self._option():
+                    self._varname_()
+                self._error(
+                    'expecting one of: '
+                    '<array_index> <varname>'
+                )
         self.name_last_node('varname')
         self._token('[')
+        self._cut()
         self._int_expr_()
         self.name_last_node('index')
         self._token(']')

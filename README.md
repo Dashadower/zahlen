@@ -18,16 +18,18 @@ goto loop;
 
 end: skip;
 ```
+See `/zahlen_sources` for additional example programs.
 
 ## Syntax
 
 ```
-<intexpr> ::= Z
-    | <varname>
-    | -<intexpr>
+<intexpr> ::=
     | <intexpr> + <intexpr>
     | <intexpr> - <intexpr>
     | <intexpr> * <intexpr>
+    | <array_index>
+    | <varname>
+    | Z  // integers
 
 <boolexp> ::= true
     | false
@@ -40,11 +42,22 @@ end: skip;
     | <boolexp> && <boolexp>
     | <boolexp> || <boolexp>
 
-<stmt> ::= <varname> = <intexpr>
-    | skip
-    | <label>: <stmt>
-    | <stmt> ; <stmt>
-    | ifelse(<boolexp>, <stmt>, <stmt>)
+<array> ::= '{' <array_elements> '}'
+
+array_elements ::= <array_element> {',' <array_element> }*;
+
+<array_element> ::= <array> | <intexpr>
+
+<array_index> ::= (<array_index> | <varname>) '[' intexp ']'
+
+<assignment> ::= <varname> = (<intexpr> | <array>)
+
+<stmt> ::= 'skip' 
+    | ifelse(<boolexp>, <stmt>, <stmt>)  // run stmt 1 of boolexp else stmt 2
     | goto <label>
     | print(<varname>)
+    | <label>: <stmt>
+    | <assignment>
+    
+<program> ::= {<stmt> ';'}+
 ```

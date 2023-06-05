@@ -107,7 +107,6 @@ class ZahlenExecutorWalker(ZahlenExpressionValueExecutor):
 
     def walk_ArrayIndex(self, node: zast.ArrayIndex):
         varname = node.varname
-        # Currently only supports 1d arrays
         return self.walk(varname)[self.walk(node.index)]
 
 
@@ -135,8 +134,9 @@ class ZahlenStatementWalker(ZahlenWalker):
     def walk_GoTo(self, node: zast.GoTo):
         self.statement_ast = node
 
+
 if __name__ == '__main__':
     i = ZahlenInterpreter()
-    i.read_program(open("zahlen_sources/array_decl.z").read())
+    i.read_program(open("zahlen_sources/2d_array_decl.z").read())
     #i.print_ast()
     i.run_program()
