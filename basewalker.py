@@ -42,6 +42,12 @@ class ZahlenWalker(NodeWalker):
     def walk_Variable(self, node: zast.Variable):
         raise NotImplementedError
 
+    def walk_Array(self, node: zast.Array):
+        raise NotImplementedError
+
+    def walk_ArrayIndex(self, node: zast.ArrayIndex):
+        raise NotImplementedError
+
 
 class ZahlenExpressionValueExecutor(ZahlenWalker):
     def walk_BinaryIntExpr(self, node: zast.BinaryIntExpr) -> int:

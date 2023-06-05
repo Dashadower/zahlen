@@ -63,7 +63,7 @@ class ZahlenParser(Parser):
     def _start_(self):  # noqa
 
         def block0():
-            self._stmts_()
+            self._statements_()
             self.add_last_node_to_name('statements')
         self._positive_closure(block0)
         self._check_eof()
@@ -78,28 +78,31 @@ class ZahlenParser(Parser):
     def _expression_(self):  # noqa
         with self._choice():
             with self._option():
-                self._intexpr_()
+                self._int_expr_()
             with self._option():
-                self._boolexpr_()
+                self._bool_expr_()
             self._error(
                 'expecting one of: '
-                '<addition_expr> <boolexpr> <comparison>'
-                '<intexpr> <logical_expr>'
+                '<addition_expr> <bool_expr> <comparison>'
+                '<int_expr> <int_factor> <logical_expr>'
                 '<multiplication>'
             )
 
     @tatsumasu()
     @nomemo
-    def _intexpr_(self):  # noqa
+    def _int_expr_(self):  # noqa
         with self._choice():
             with self._option():
                 self._addition_expr_()
             with self._option():
                 self._multiplication_()
+            with self._option():
+                self._int_factor_()
             self._error(
                 'expecting one of: '
-                '<addition_expr> <int_factor>'
-                '<multiplication> <multiplication_expr>'
+                '<addition_expr> <array_index>'
+                '<int_factor> <integer> <multiplication>'
+                '<multiplication_expr> <varname>'
             )
 
     @tatsumasu('BinaryIntExpr')
@@ -119,7 +122,7 @@ class ZahlenParser(Parser):
                 )
         self.name_last_node('op')
         self._cut()
-        self._intexpr_()
+        self._int_expr_()
         self.name_last_node('right')
 
         self._define(
@@ -137,8 +140,9 @@ class ZahlenParser(Parser):
                 self._int_factor_()
             self._error(
                 'expecting one of: '
-                '<int_factor> <integer> <multiplication>'
-                '<multiplication_expr> <varname>'
+                '<array_index> <int_factor> <integer>'
+                '<multiplication> <multiplication_expr>'
+                '<varname>'
             )
 
     @tatsumasu('BinaryIntExpr')
@@ -172,14 +176,17 @@ class ZahlenParser(Parser):
             with self._option():
                 self._integer_()
             with self._option():
+                self._array_index_()
+            with self._option():
                 self._varname_()
             self._error(
                 'expecting one of: '
-                '<identifier> <integer> <varname> \\d+'
+                '<array_index> <identifier> <integer>'
+                '<varname> \\d+'
             )
 
     @tatsumasu()
-    def _boolexpr_(self):  # noqa
+    def _bool_expr_(self):  # noqa
         with self._choice():
             with self._option():
                 self._logical_expr_()
@@ -206,7 +213,7 @@ class ZahlenParser(Parser):
                     "'&&' '||'"
                 )
         self.name_last_node('op')
-        self._boolexpr_()
+        self._bool_expr_()
         self.name_last_node('right')
 
         self._define(
@@ -224,13 +231,13 @@ class ZahlenParser(Parser):
             self._error(
                 'expecting one of: '
                 '<addition_expr> <bool_factor>'
-                '<bool_value> <comparison_expr> <intexpr>'
-                '<multiplication>'
+                '<bool_value> <comparison_expr>'
+                '<int_expr> <int_factor> <multiplication>'
             )
 
     @tatsumasu('BinaryBoolExpr')
     def _comparison_expr_(self):  # noqa
-        self._intexpr_()
+        self._int_expr_()
         self.name_last_node('left')
         with self._group():
             with self._choice():
@@ -265,12 +272,13 @@ class ZahlenParser(Parser):
             with self._option():
                 self._bool_value_()
             with self._option():
-                self._intexpr_()
+                self._int_expr_()
             self._error(
                 'expecting one of: '
                 "'false' 'true' <addition_expr>"
-                '<bool_value> <int_factor> <intexpr>'
-                '<multiplication> <multiplication_expr>'
+                '<array_index> <bool_value> <int_expr>'
+                '<int_factor> <integer> <multiplication>'
+                '<multiplication_expr> <varname>'
             )
 
     @tatsumasu('Boolean')
@@ -293,19 +301,19 @@ class ZahlenParser(Parser):
         self.name_last_node('label')
         self._token(':')
         self._cut()
-        self._stmt_()
-        self.name_last_node('stmt')
+        self._statement_()
+        self.name_last_node('statement')
 
         self._define(
-            ['label', 'stmt'],
+            ['label', 'statement'],
             []
         )
 
     @tatsumasu()
-    def _stmts_(self):  # noqa
+    def _statements_(self):  # noqa
         with self._choice():
             with self._option():
-                self._stmt_()
+                self._statement_()
                 self.name_last_node('@')
                 self._token(';')
             with self._option():
@@ -316,11 +324,11 @@ class ZahlenParser(Parser):
                 'expecting one of: '
                 '<assignment> <goto> <identifier>'
                 '<ifelse> <label> <labeled_statement>'
-                '<print> <skip> <stmt>'
+                '<print> <skip> <statement>'
             )
 
     @tatsumasu()
-    def _stmt_(self):  # noqa
+    def _statement_(self):  # noqa
         with self._choice():
             with self._option():
                 self._assignment_()
@@ -342,18 +350,73 @@ class ZahlenParser(Parser):
     def _assignment_rhs_(self):  # noqa
         with self._choice():
             with self._option():
-                self._intexpr_()
+                self._int_expr_()
             with self._option():
                 self._varname_()
             with self._option():
                 self._integer_()
+            with self._option():
+                self._array_()
             self._error(
                 'expecting one of: '
-                '<addition_expr> <identifier>'
-                '<int_factor> <integer> <intexpr>'
-                '<multiplication> <multiplication_expr>'
-                '<varname> \\d+'
+                "'{' <addition_expr> <array>"
+                '<array_index> <identifier> <int_expr>'
+                '<int_factor> <integer> <multiplication>'
+                '<multiplication_expr> <varname> \\d+'
             )
+
+    @tatsumasu('Array')
+    def _array_(self):  # noqa
+        self._token('{')
+        self._array_elements_()
+        self.name_last_node('elements')
+        self._token('}')
+
+        self._define(
+            ['elements'],
+            []
+        )
+
+    @tatsumasu()
+    def _array_elements_(self):  # noqa
+        self._array_element_()
+        self.add_last_node_to_name('@')
+
+        def block1():
+            self._token(',')
+            self._cut()
+            self._array_element_()
+            self.add_last_node_to_name('@')
+        self._closure(block1)
+
+    @tatsumasu()
+    def _array_element_(self):  # noqa
+        with self._choice():
+            with self._option():
+                self._array_()
+            with self._option():
+                self._int_expr_()
+            self._error(
+                'expecting one of: '
+                "'{' <addition_expr> <array>"
+                '<array_index> <int_expr> <int_factor>'
+                '<integer> <multiplication>'
+                '<multiplication_expr> <varname>'
+            )
+
+    @tatsumasu('ArrayIndex')
+    def _array_index_(self):  # noqa
+        self._varname_()
+        self.name_last_node('varname')
+        self._token('[')
+        self._int_expr_()
+        self.name_last_node('index')
+        self._token(']')
+
+        self._define(
+            ['index', 'varname'],
+            []
+        )
 
     @tatsumasu('Assignment')
     def _assignment_(self):  # noqa
@@ -377,18 +440,18 @@ class ZahlenParser(Parser):
         self._token('ifelse')
         self._token('(')
         self._cut()
-        self._boolexpr_()
+        self._bool_expr_()
         self.name_last_node('pred')
         self._token(',')
-        self._stmt_()
-        self.name_last_node('true_stmt')
+        self._statement_()
+        self.name_last_node('true_statement')
         self._token(',')
-        self._stmt_()
-        self.name_last_node('false_stmt')
+        self._statement_()
+        self.name_last_node('false_statement')
         self._token(')')
 
         self._define(
-            ['false_stmt', 'pred', 'true_stmt'],
+            ['false_statement', 'pred', 'true_statement'],
             []
         )
 
@@ -407,12 +470,12 @@ class ZahlenParser(Parser):
     def _print_(self):  # noqa
         self._token('print')
         self._token('(')
-        self._varname_()
-        self.name_last_node('varname')
+        self._expression_()
+        self.name_last_node('expression')
         self._token(')')
 
         self._define(
-            ['varname'],
+            ['expression'],
             []
         )
 
@@ -443,7 +506,7 @@ class ZahlenSemantics:
     def expression(self, ast):  # noqa
         return ast
 
-    def intexpr(self, ast):  # noqa
+    def int_expr(self, ast):  # noqa
         return ast
 
     def addition_expr(self, ast):  # noqa
@@ -458,7 +521,7 @@ class ZahlenSemantics:
     def int_factor(self, ast):  # noqa
         return ast
 
-    def boolexpr(self, ast):  # noqa
+    def bool_expr(self, ast):  # noqa
         return ast
 
     def logical_expr(self, ast):  # noqa
@@ -479,13 +542,25 @@ class ZahlenSemantics:
     def labeled_statement(self, ast):  # noqa
         return ast
 
-    def stmts(self, ast):  # noqa
+    def statements(self, ast):  # noqa
         return ast
 
-    def stmt(self, ast):  # noqa
+    def statement(self, ast):  # noqa
         return ast
 
     def assignment_rhs(self, ast):  # noqa
+        return ast
+
+    def array(self, ast):  # noqa
+        return ast
+
+    def array_elements(self, ast):  # noqa
+        return ast
+
+    def array_element(self, ast):  # noqa
+        return ast
+
+    def array_index(self, ast):  # noqa
         return ast
 
     def assignment(self, ast):  # noqa

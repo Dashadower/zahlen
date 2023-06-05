@@ -59,7 +59,18 @@ class Boolean(ModelBase):
 @dataclass(eq=False)
 class LabeledStatement(ModelBase):
     label: Any = None
-    stmt: Any = None
+    statement: Any = None
+
+
+@dataclass(eq=False)
+class Array(ModelBase):
+    elements: Any = None
+
+
+@dataclass(eq=False)
+class ArrayIndex(ModelBase):
+    index: Any = None
+    varname: Any = None
 
 
 @dataclass(eq=False)
@@ -75,9 +86,9 @@ class Skip(ModelBase):
 
 @dataclass(eq=False)
 class IfElse(ModelBase):
-    false_stmt: Any = None
+    false_statement: Any = None
     pred: Any = None
-    true_stmt: Any = None
+    true_statement: Any = None
 
 
 @dataclass(eq=False)
@@ -87,7 +98,7 @@ class GoTo(ModelBase):
 
 @dataclass(eq=False)
 class Print(ModelBase):
-    varname: Any = None
+    expression: Any = None
 
 
 @dataclass(eq=False)

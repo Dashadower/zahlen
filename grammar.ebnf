@@ -1,17 +1,18 @@
 @@grammar::Zahlen
 @@eol_comments :: /#.*?$/
 
-start::Program = { statements+:stmts }+ $;
+start::Program = { statements+:statements }+ $;
 
-expression = intexpr
-    | boolexpr
+expression = int_expr
+    | bool_expr
     ;
 
-intexpr = addition_expr
+int_expr = addition_expr
     | multiplication
+    | int_factor
     ;
 
-addition_expr::BinaryIntExpr = left:multiplication op:('+' | '-') ~ right:intexpr;
+addition_expr::BinaryIntExpr = left:multiplication op:('+' | '-') ~ right:int_expr;
 
 multiplication = multiplication_expr
     | int_factor
@@ -20,37 +21,38 @@ multiplication = multiplication_expr
 multiplication_expr::BinaryIntExpr = left:multiplication op:('*' | '/') ~ right:int_factor;
 
 int_factor = integer
+    | array_index
     | varname
     ;
 
-boolexpr = logical_expr
+bool_expr = logical_expr
     | comparison
     ;
 
-logical_expr::BinaryBoolExpr = left:comparison op:('&&' | '||') right:boolexpr;
+logical_expr::BinaryBoolExpr = left:comparison op:('&&' | '||') right:bool_expr;
 
 comparison = comparison_expr
     | bool_factor
     ;
 
-comparison_expr::BinaryBoolExpr = left:intexpr op:('==' | '!=' | '>=' | '<=' | '<' | '>') right:expression
+comparison_expr::BinaryBoolExpr = left:int_expr op:('==' | '!=' | '>=' | '<=' | '<' | '>') right:expression
     ;
 
 bool_factor = bool_value
-    | intexpr
+    | int_expr
     ;
 
 bool_value::Boolean = value:'true'
     | value:'false'
     ;
 
-labeled_statement::LabeledStatement = label:label ':' ~ stmt:stmt;
+labeled_statement::LabeledStatement = label:label ':' ~ statement:statement;
 
-stmts = @:stmt ';'
+statements = @:statement ';'
     | @:labeled_statement ';'
     ;
 
-stmt =
+statement =
     | assignment
     | skip
     | ifelse
@@ -58,16 +60,25 @@ stmt =
     | print
     ;
 
-assignment_rhs = intexpr
+assignment_rhs = int_expr
     | varname
     | integer
+    | array
     ;
+
+array::Array = '{' elements:array_elements '}';
+array_elements = @+:array_element {',' ~ @+:array_element}*;
+array_element = array
+    | int_expr
+    ;
+
+array_index::ArrayIndex = varname:varname '[' index:int_expr ']';
 
 assignment::Assignment = varname:varname '=' rhs:assignment_rhs;
 skip::Skip = 'skip';
-ifelse::IfElse = 'ifelse' '(' ~ pred:boolexpr ',' true_stmt:stmt ',' false_stmt:stmt ')';
+ifelse::IfElse = 'ifelse' '(' ~ pred:bool_expr ',' true_statement:statement ',' false_statement:statement ')';
 goto::GoTo = 'goto' label:label;
-print::Print = 'print' '(' varname:varname ')';
+print::Print = 'print' '(' expression:expression ')';
 
 integer::Integer = value:(/\d+/);
 

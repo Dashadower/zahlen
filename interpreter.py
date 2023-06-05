@@ -1,7 +1,5 @@
 from parser import ZahlenParser
 import zahlen_ast as zast
-from tatsu.walkers import NodeWalker
-from tatsu.util import asjson
 from tatsu.semantics import ModelBuilderSemantics
 from typing import Union, Type, Callable
 from numbers import Number
@@ -14,7 +12,7 @@ class ZahlenInterpreter:
     def __init__(self):
         self.pc: int = 0  # program counter
         self.label_map: dict[str, int] = {}  # maps label names to statement indices
-        self.statements = []
+        self.statements = []  # list of the statement ASTs in order. Its indices become the program counter
 
         self.variable_values: dict[str, int] = {}  # maps variable names to values
         self.parser = ZahlenParser()
@@ -22,7 +20,7 @@ class ZahlenInterpreter:
     def read_program(self, program: str):
         self.label_map = {}
         self.statements = []
-        ast = self.parser.parse(program, semantics=ModelBuilderSemantics())
+        ast = self.parser.parse(program, semantics=ModelBuilderSemantics(), trace=False)
         for index, statement in enumerate(ast.statements):
             walker = ZahlenStatementWalker()
             walker.walk(statement)
@@ -48,11 +46,15 @@ class ZahlenInterpreter:
         print(f"FINISHED EXECUTION. final variable values:")
         print(self.variable_values)
 
+    def print_ast(self) -> None:
+        for stmt in self.statements:
+            print(stmt)
+
     def get_variable_value(self, varname: str):
         return self.variable_values[varname]
 
     def set_variable_value(self, varname: str, value: int):
-        assert isinstance(value, int), f"Value to write to variable {varname} isnt a integer type; has value {value}"
+        assert isinstance(value, int) or isinstance(value, list), f"Value to write to variable {varname} isnt a integer type; has value {value}"
         self.variable_values[varname] = value
 
     def increment_pc(self):
@@ -91,13 +93,22 @@ class ZahlenExecutorWalker(ZahlenExpressionValueExecutor):
             self.walk(node.false_stmt)
 
     def walk_Print(self, node: zast.Print):
-        value = self.walk(node.varname)
+        value = self.walk(node.expression)
         print(value)
         self.increment_pc_func()
 
     def walk_Variable(self, node: zast.Variable):
         varname = node.varname
         return self.get_variable_func(varname)
+
+    def walk_Array(self, node: zast.Array):
+        value = [self.walk(element) for element in node.elements]
+        return value
+
+    def walk_ArrayIndex(self, node: zast.ArrayIndex):
+        varname = node.varname
+        # Currently only supports 1d arrays
+        return self.walk(varname)[self.walk(node.index)]
 
 
 @dataclass
@@ -107,7 +118,7 @@ class ZahlenStatementWalker(ZahlenWalker):
 
     def walk_LabeledStatement(self, node: zast.LabeledStatement):
         self.label = node.label
-        self.statement_ast = node.stmt
+        self.statement_ast = node.statement
 
     def walk_Print(self, node: zast.Print):
         self.statement_ast = node
@@ -126,5 +137,6 @@ class ZahlenStatementWalker(ZahlenWalker):
 
 if __name__ == '__main__':
     i = ZahlenInterpreter()
-    i.read_program(open("zahlen_sources/fibonacci.z").read())
+    i.read_program(open("zahlen_sources/array_decl.z").read())
+    i.print_ast()
     i.run_program()
