@@ -84,31 +84,28 @@ class ZahlenParser(Parser):
             self._error(
                 'expecting one of: '
                 '<addition_expr> <bool_expr> <comparison>'
-                '<int_expr> <int_factor> <logical_expr>'
+                '<int_expr> <logical_expr>'
                 '<multiplication>'
             )
 
     @tatsumasu()
-    @nomemo
+    @leftrec
     def _int_expr_(self):  # noqa
         with self._choice():
             with self._option():
                 self._addition_expr_()
             with self._option():
                 self._multiplication_()
-            with self._option():
-                self._int_factor_()
             self._error(
                 'expecting one of: '
-                '<addition_expr> <array_index>'
-                '<int_factor> <integer> <multiplication>'
-                '<multiplication_expr> <varname>'
+                '<addition_expr> <int_expr> <int_factor>'
+                '<multiplication> <multiplication_expr>'
             )
 
     @tatsumasu('BinaryIntExpr')
     @nomemo
     def _addition_expr_(self):  # noqa
-        self._multiplication_()
+        self._int_expr_()
         self.name_last_node('left')
         with self._group():
             with self._choice():
@@ -122,7 +119,7 @@ class ZahlenParser(Parser):
                 )
         self.name_last_node('op')
         self._cut()
-        self._int_expr_()
+        self._multiplication_()
         self.name_last_node('right')
 
         self._define(
@@ -213,6 +210,7 @@ class ZahlenParser(Parser):
                     "'&&' '||'"
                 )
         self.name_last_node('op')
+        self._cut()
         self._bool_expr_()
         self.name_last_node('right')
 
@@ -232,7 +230,7 @@ class ZahlenParser(Parser):
                 'expecting one of: '
                 '<addition_expr> <bool_factor>'
                 '<bool_value> <comparison_expr>'
-                '<int_expr> <int_factor> <multiplication>'
+                '<int_expr> <multiplication>'
             )
 
     @tatsumasu('BinaryBoolExpr')
@@ -258,6 +256,7 @@ class ZahlenParser(Parser):
                     "'!=' '<' '<=' '==' '>' '>='"
                 )
         self.name_last_node('op')
+        self._cut()
         self._expression_()
         self.name_last_node('right')
 
@@ -276,9 +275,8 @@ class ZahlenParser(Parser):
             self._error(
                 'expecting one of: '
                 "'false' 'true' <addition_expr>"
-                '<array_index> <bool_value> <int_expr>'
-                '<int_factor> <integer> <multiplication>'
-                '<multiplication_expr> <varname>'
+                '<bool_value> <int_expr> <int_factor>'
+                '<multiplication> <multiplication_expr>'
             )
 
     @tatsumasu('Boolean')
@@ -313,12 +311,14 @@ class ZahlenParser(Parser):
     def _statements_(self):  # noqa
         with self._choice():
             with self._option():
-                self._statement_()
-                self.name_last_node('@')
-                self._token(';')
-            with self._option():
                 self._labeled_statement_()
                 self.name_last_node('@')
+                self._cut()
+                self._token(';')
+            with self._option():
+                self._statement_()
+                self.name_last_node('@')
+                self._cut()
                 self._token(';')
             self._error(
                 'expecting one of: '
@@ -331,8 +331,6 @@ class ZahlenParser(Parser):
     def _statement_(self):  # noqa
         with self._choice():
             with self._option():
-                self._assignment_()
-            with self._option():
                 self._skip_()
             with self._option():
                 self._ifelse_()
@@ -340,6 +338,8 @@ class ZahlenParser(Parser):
                 self._goto_()
             with self._option():
                 self._print_()
+            with self._option():
+                self._assignment_()
             self._error(
                 'expecting one of: '
                 "'goto' 'ifelse' 'print' 'skip'"
@@ -359,15 +359,16 @@ class ZahlenParser(Parser):
                 self._array_()
             self._error(
                 'expecting one of: '
-                "'{' <addition_expr> <array>"
-                '<array_index> <identifier> <int_expr>'
-                '<int_factor> <integer> <multiplication>'
-                '<multiplication_expr> <varname> \\d+'
+                "'{' <addition_expr> <array> <identifier>"
+                '<int_expr> <int_factor> <integer>'
+                '<multiplication> <multiplication_expr>'
+                '<varname> \\d+'
             )
 
     @tatsumasu('Array')
     def _array_(self):  # noqa
         self._token('{')
+        self._cut()
         self._array_elements_()
         self.name_last_node('elements')
         self._token('}')
@@ -398,10 +399,9 @@ class ZahlenParser(Parser):
                 self._int_expr_()
             self._error(
                 'expecting one of: '
-                "'{' <addition_expr> <array>"
-                '<array_index> <int_expr> <int_factor>'
-                '<integer> <multiplication>'
-                '<multiplication_expr> <varname>'
+                "'{' <addition_expr> <array> <int_expr>"
+                '<int_factor> <multiplication>'
+                '<multiplication_expr>'
             )
 
     @tatsumasu('ArrayIndex')
@@ -423,6 +423,7 @@ class ZahlenParser(Parser):
         self._varname_()
         self.name_last_node('varname')
         self._token('=')
+        self._cut()
         self._assignment_rhs_()
         self.name_last_node('rhs')
 
@@ -458,6 +459,7 @@ class ZahlenParser(Parser):
     @tatsumasu('GoTo')
     def _goto_(self):  # noqa
         self._token('goto')
+        self._cut()
         self._label_()
         self.name_last_node('label')
 
@@ -469,6 +471,7 @@ class ZahlenParser(Parser):
     @tatsumasu('Print')
     def _print_(self):  # noqa
         self._token('print')
+        self._cut()
         self._token('(')
         self._expression_()
         self.name_last_node('expression')

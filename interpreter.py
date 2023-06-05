@@ -88,9 +88,9 @@ class ZahlenExecutorWalker(ZahlenExpressionValueExecutor):
 
     def walk_IfElse(self, node: zast.IfElse):
         if self.walk(node.pred):
-            self.walk(node.true_stmt)
+            self.walk(node.true_statement)
         else:
-            self.walk(node.false_stmt)
+            self.walk(node.false_statement)
 
     def walk_Print(self, node: zast.Print):
         value = self.walk(node.expression)
@@ -138,5 +138,5 @@ class ZahlenStatementWalker(ZahlenWalker):
 if __name__ == '__main__':
     i = ZahlenInterpreter()
     i.read_program(open("zahlen_sources/array_decl.z").read())
-    i.print_ast()
+    #i.print_ast()
     i.run_program()

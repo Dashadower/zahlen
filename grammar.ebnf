@@ -9,10 +9,9 @@ expression = int_expr
 
 int_expr = addition_expr
     | multiplication
-    | int_factor
     ;
 
-addition_expr::BinaryIntExpr = left:multiplication op:('+' | '-') ~ right:int_expr;
+addition_expr::BinaryIntExpr = left:int_expr op:('+' | '-') ~ right:multiplication;
 
 multiplication = multiplication_expr
     | int_factor
@@ -29,13 +28,13 @@ bool_expr = logical_expr
     | comparison
     ;
 
-logical_expr::BinaryBoolExpr = left:comparison op:('&&' | '||') right:bool_expr;
+logical_expr::BinaryBoolExpr = left:comparison op:('&&' | '||') ~ right:bool_expr;
 
 comparison = comparison_expr
     | bool_factor
     ;
 
-comparison_expr::BinaryBoolExpr = left:int_expr op:('==' | '!=' | '>=' | '<=' | '<' | '>') right:expression
+comparison_expr::BinaryBoolExpr = left:int_expr op:('==' | '!=' | '>=' | '<=' | '<' | '>') ~ right:expression
     ;
 
 bool_factor = bool_value
@@ -48,16 +47,17 @@ bool_value::Boolean = value:'true'
 
 labeled_statement::LabeledStatement = label:label ':' ~ statement:statement;
 
-statements = @:statement ';'
-    | @:labeled_statement ';'
+statements =
+    @:labeled_statement ~ ';'
+    | @:statement ~ ';'
     ;
 
 statement =
-    | assignment
-    | skip
+    skip
     | ifelse
     | goto
     | print
+    | assignment
     ;
 
 assignment_rhs = int_expr
@@ -66,7 +66,7 @@ assignment_rhs = int_expr
     | array
     ;
 
-array::Array = '{' elements:array_elements '}';
+array::Array = '{' ~ elements:array_elements '}';
 array_elements = @+:array_element {',' ~ @+:array_element}*;
 array_element = array
     | int_expr
@@ -74,11 +74,11 @@ array_element = array
 
 array_index::ArrayIndex = varname:varname '[' index:int_expr ']';
 
-assignment::Assignment = varname:varname '=' rhs:assignment_rhs;
+assignment::Assignment = varname:varname '=' ~ rhs:assignment_rhs;
 skip::Skip = 'skip';
 ifelse::IfElse = 'ifelse' '(' ~ pred:bool_expr ',' true_statement:statement ',' false_statement:statement ')';
-goto::GoTo = 'goto' label:label;
-print::Print = 'print' '(' expression:expression ')';
+goto::GoTo = 'goto' ~ label:label;
+print::Print = 'print' ~ '(' expression:expression ')';
 
 integer::Integer = value:(/\d+/);
 
