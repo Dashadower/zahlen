@@ -1,1 +1,1 @@
-tatsu grammar.ebnf --outfile parser.py --object-model-outfile zahlen_ast.py
+tatsu grammar/zahlen_with_loops.ebnf --outfile parser.py --object-model-outfile zahlen_ast.py

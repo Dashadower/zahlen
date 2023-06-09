@@ -57,12 +57,6 @@ class Boolean(ModelBase):
 
 
 @dataclass(eq=False)
-class LabeledStatement(ModelBase):
-    label: Any = None
-    statement: Any = None
-
-
-@dataclass(eq=False)
 class Array(ModelBase):
     elements: Any = None
 
@@ -92,13 +86,14 @@ class IfElse(ModelBase):
 
 
 @dataclass(eq=False)
-class GoTo(ModelBase):
-    label: Any = None
+class Print(ModelBase):
+    expression: Any = None
 
 
 @dataclass(eq=False)
-class Print(ModelBase):
-    expression: Any = None
+class While(ModelBase):
+    pred: Any = None
+    statements: Any = None
 
 
 @dataclass(eq=False)

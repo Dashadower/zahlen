@@ -18,9 +18,6 @@ class ZahlenWalker(NodeWalker):
     def walk_Boolean(self, node: zast.Boolean):
         raise NotImplementedError
 
-    def walk_LabeledStatement(self, node: zast.LabeledStatement):
-        raise NotImplementedError
-
     def walk_Assignment(self, node: zast.Assignment):
         raise NotImplementedError
 
@@ -30,7 +27,7 @@ class ZahlenWalker(NodeWalker):
     def walk_IfElse(self, node: zast.IfElse):
         raise NotImplementedError
 
-    def walk_GoTo(self, node: zast.GoTo):
+    def walk_While(self, node: zast.While):
         raise NotImplementedError
 
     def walk_Print(self, node: zast.Print):

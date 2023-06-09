@@ -1,9 +1,8 @@
 arr = {0, 1, 2, 3, 4};
 sum = 0;
 i = 0;
-loop: ifelse(i < 5, skip, goto end);
-sum = sum + arr[i];
-i = i + 1;
-goto loop;
-
-end: print(sum);
+while(i < 5){
+    sum = sum + arr[i];
+    i = i + 1;
+}
+print(sum);

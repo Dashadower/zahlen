@@ -2,7 +2,7 @@
 @@eol_comments :: /#.*?$/
 @@parseinfo :: True
 
-start::Program = { statements+:statements }+ $;
+start::Program = { statements:toplevel_statements }+ $;
 
 expression = int_expr
     | bool_expr
@@ -46,17 +46,14 @@ bool_value::Boolean = value:'true'
     | value:'false'
     ;
 
-labeled_statement::LabeledStatement = label:label ':' ~ statement:statement;
-
-statements =
-    @:labeled_statement ~ ';'
-    | @:statement ~ ';'
-    ;
+toplevel_statements =
+    | @:while
+    | @:statement ~ ';' ;
 
 statement =
     skip
     | ifelse
-    | goto
+    | while
     | print
     | assignment
     ;
@@ -78,12 +75,12 @@ array_index::ArrayIndex = varname:(array_index | varname) '[' ~ index:int_expr '
 assignment::Assignment = varname:varname '=' ~ rhs:assignment_rhs;
 skip::Skip = 'skip';
 ifelse::IfElse = 'ifelse' '(' ~ pred:bool_expr ',' true_statement:statement ',' false_statement:statement ')';
-goto::GoTo = 'goto' ~ label:label;
 print::Print = 'print' ~ '(' expression:expression ')';
+
+while::While = 'while' '(' ~ pred:bool_expr ')' '{' {statements:toplevel_statements}+ '}';
 
 integer::Integer = value:(/\d+/);
 
 varname::Variable = varname:identifier;
-label = identifier;
 
 identifier = /[a-zA-Z_][a-zA-Z0-9_]*/;

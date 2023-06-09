@@ -7,16 +7,13 @@ practice implementing static analysis techniques.
 fib_0 = 0;
 fib_1 = 1;
 n = 10;
-
-loop: ifelse(n == 0, goto end, skip);  # print up to n fibonacci numbers
-print(fib_0);
-tmp = fib_0;
-fib_0 = fib_1;
-fib_1 = fib_1 + tmp;
-n = n - 1;
-goto loop;
-
-end: skip;
+while (n > 0){
+    print(fib_0);
+    tmp = fib_0;
+    fib_0 = fib_1;
+    fib_1 = fib_1 + tmp;
+    n = n - 1;
+}
 ```
 See `/zahlen_sources` for additional example programs.
 
@@ -52,11 +49,10 @@ array_elements ::= <array_element> {',' <array_element> }*;
 
 <assignment> ::= <varname> = (<intexpr> | <array>)
 
-<stmt> ::= 'skip' 
-    | ifelse(<boolexp>, <stmt>, <stmt>)  // run stmt 1 of boolexp else stmt 2
-    | goto <label>
-    | print(<varname>)
-    | <label>: <stmt>
+<stmt> ::= skip 
+    | ifelse '(' <boolexp>, <stmt>, <stmt> ')'  // run stmt 1 of boolexp else stmt 2
+    | print '(' <varname> ')'
+    | while '(' <boolexp> ')' '{' {<stmt> ';'}+ '}'
     | <assignment>
     
 <program> ::= {<stmt> ';'}+

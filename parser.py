@@ -35,7 +35,7 @@ class ZahlenBuffer(Buffer):
             eol_comments_re='#.*?$',
             ignorecase=False,
             namechars='',
-            parseinfo=False,
+            parseinfo=True,
         )
         config = config.replace(**settings)
         super().__init__(text, config=config)
@@ -52,7 +52,7 @@ class ZahlenParser(Parser):
             eol_comments_re='#.*?$',
             ignorecase=False,
             namechars='',
-            parseinfo=False,
+            parseinfo=True,
             keywords=KEYWORDS,
             start='start',
         )
@@ -63,14 +63,14 @@ class ZahlenParser(Parser):
     def _start_(self):  # noqa
 
         def block0():
-            self._statements_()
-            self.add_last_node_to_name('statements')
+            self._toplevel_statements_()
+            self.name_last_node('statements')
         self._positive_closure(block0)
         self._check_eof()
 
         self._define(
-            [],
-            ['statements']
+            ['statements'],
+            []
         )
 
     @tatsumasu()
@@ -294,28 +294,12 @@ class ZahlenParser(Parser):
                 "'false' 'true'"
             )
 
-    @tatsumasu('LabeledStatement')
-    def _labeled_statement_(self):  # noqa
-        self._label_()
-        self.name_last_node('label')
-        self._token(':')
-        self._cut()
-        self._statement_()
-        self.name_last_node('statement')
-
-        self._define(
-            ['label', 'statement'],
-            []
-        )
-
     @tatsumasu()
-    def _statements_(self):  # noqa
+    def _toplevel_statements_(self):  # noqa
         with self._choice():
             with self._option():
-                self._labeled_statement_()
+                self._while_()
                 self.name_last_node('@')
-                self._cut()
-                self._token(';')
             with self._option():
                 self._statement_()
                 self.name_last_node('@')
@@ -323,9 +307,8 @@ class ZahlenParser(Parser):
                 self._token(';')
             self._error(
                 'expecting one of: '
-                '<assignment> <goto> <identifier>'
-                '<ifelse> <label> <labeled_statement>'
-                '<print> <skip> <statement>'
+                "'while' <assignment> <ifelse> <print>"
+                '<skip> <statement>'
             )
 
     @tatsumasu()
@@ -336,14 +319,14 @@ class ZahlenParser(Parser):
             with self._option():
                 self._ifelse_()
             with self._option():
-                self._goto_()
+                self._while_()
             with self._option():
                 self._print_()
             with self._option():
                 self._assignment_()
             self._error(
                 'expecting one of: '
-                "'goto' 'ifelse' 'print' 'skip'"
+                "'ifelse' 'print' 'skip' 'while'"
                 '<assignment> <varname>'
             )
 
@@ -468,18 +451,6 @@ class ZahlenParser(Parser):
             []
         )
 
-    @tatsumasu('GoTo')
-    def _goto_(self):  # noqa
-        self._token('goto')
-        self._cut()
-        self._label_()
-        self.name_last_node('label')
-
-        self._define(
-            ['label'],
-            []
-        )
-
     @tatsumasu('Print')
     def _print_(self):  # noqa
         self._token('print')
@@ -494,6 +465,27 @@ class ZahlenParser(Parser):
             []
         )
 
+    @tatsumasu('While')
+    def _while_(self):  # noqa
+        self._token('while')
+        self._token('(')
+        self._cut()
+        self._bool_expr_()
+        self.name_last_node('pred')
+        self._token(')')
+        self._token('{')
+
+        def block1():
+            self._toplevel_statements_()
+            self.name_last_node('statements')
+        self._positive_closure(block1)
+        self._token('}')
+
+        self._define(
+            ['pred', 'statements'],
+            []
+        )
+
     @tatsumasu('Integer')
     def _integer_(self):  # noqa
         with self._group():
@@ -504,10 +496,6 @@ class ZahlenParser(Parser):
     def _varname_(self):  # noqa
         self._identifier_()
         self.name_last_node('varname')
-
-    @tatsumasu()
-    def _label_(self):  # noqa
-        self._identifier_()
 
     @tatsumasu()
     def _identifier_(self):  # noqa
@@ -554,10 +542,7 @@ class ZahlenSemantics:
     def bool_value(self, ast):  # noqa
         return ast
 
-    def labeled_statement(self, ast):  # noqa
-        return ast
-
-    def statements(self, ast):  # noqa
+    def toplevel_statements(self, ast):  # noqa
         return ast
 
     def statement(self, ast):  # noqa
@@ -587,19 +572,16 @@ class ZahlenSemantics:
     def ifelse(self, ast):  # noqa
         return ast
 
-    def goto(self, ast):  # noqa
+    def print(self, ast):  # noqa
         return ast
 
-    def print(self, ast):  # noqa
+    def while_(self, ast):  # noqa
         return ast
 
     def integer(self, ast):  # noqa
         return ast
 
     def varname(self, ast):  # noqa
-        return ast
-
-    def label(self, ast):  # noqa
         return ast
 
     def identifier(self, ast):  # noqa
