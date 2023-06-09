@@ -75,7 +75,7 @@ array_index::ArrayIndex = varname:(array_index | varname) '[' ~ index:int_expr '
 assignment::Assignment = varname:varname '=' ~ rhs:assignment_rhs;
 skip::Skip = 'skip';
 ifelse::IfElse = 'ifelse' '(' ~ pred:bool_expr ',' true_statement:statement ',' false_statement:statement ')';
-print::Print = 'print' ~ '(' expression:expression ')';
+print::Print = 'print' '(' ~ expression:expression ')';
 
 while::While = 'while' '(' ~ pred:bool_expr ')' '{' {statements:toplevel_statements}+ '}';
 

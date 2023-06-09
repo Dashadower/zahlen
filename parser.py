@@ -454,8 +454,8 @@ class ZahlenParser(Parser):
     @tatsumasu('Print')
     def _print_(self):  # noqa
         self._token('print')
-        self._cut()
         self._token('(')
+        self._cut()
         self._expression_()
         self.name_last_node('expression')
         self._token(')')
