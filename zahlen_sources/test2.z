@@ -1,2 +1,0 @@
-begin: a = 1 * 1 + 2;
-ifelse(1 > 2, skip, skip);

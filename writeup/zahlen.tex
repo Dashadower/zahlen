@@ -1,0 +1,153 @@
+\documentclass{article}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{setspace}
+\usepackage{amsfonts}
+\usepackage{indentfirst}
+\usepackage{stmaryrd}
+\usepackage{proof}
+
+\title{Basic Static Analysis with $\mathbb{Z}$ahlen: a Simple Imperative Programming Language}
+\author{Shinyoung Kim}
+\date{}
+
+\onehalfspacing
+
+\begin{document}
+
+	\maketitle
+	
+	\section{Introduction}
+	TBC
+	
+	\section{Syntax}
+	move bnf stuff here
+	\section{Semantics}
+	
+	In this section, we discuss the denotational and transitional semantics of $\mathbb{Z}$ahlen, which is required to write a sound static analyzer.
+	
+	\subsection{Denotational Semantics}
+	
+	We define $\llbracket \mathbf{stmt} \rrbracket \sigma$ as the denotational semantics of statement $\mathbf{stmt}$ under state $\sigma$.
+	
+	The semantics for basic statements are defined as follows:
+	
+	\begin{align*}
+			\llbracket v = e \rrbracket \sigma &= [\sigma \ | \ v: \llbracket e \rrbracket \sigma] \\
+			\llbracket \mathbf{skip} \rrbracket \sigma &= \sigma
+			\\
+			\llbracket \mathbf{ifelse}(e, s_1, s_2) \rrbracket \sigma &=
+			\begin{cases}
+				\llbracket s_1 \rrbracket \sigma, & \text{if} \ \llbracket e \rrbracket \\
+				\llbracket s_2 \rrbracket \sigma, & \text{otherwise}
+			\end{cases}
+			\\
+			\llbracket s_1 ; s_2 \rrbracket &=
+			\begin{cases}
+				(\llbracket s_2 \rrbracket)(\llbracket s_1 \rrbracket \sigma), & \text{if} \ \llbracket s_1 \rrbracket \sigma \neq \bot \\
+				\bot, & \text{otherwise}
+			\end{cases}
+			\\
+			\llbracket \mathbf{term} \rrbracket &= \bot
+	\end{align*}
+	
+	\subsubsection{Why $\mathbf{goto}$ statements are problematic}
+	
+	My initial decision was to evade defining loops(primarily $\mathbf{while}$ loops) because the denotational semantics for them require a fixpoint-semantics declaration, which would be non-trivial to mechanically analyze. Instead, loops would be purely a syntactic construct and were expected to be rewritten to a combination of $\mathbf{ifelse}$ and $\mathbf{goto}$ statements. Much like what you would see in assembly, the $\mathbf{goto} \ l$ statement unconditionally jumps to a statement with label $l$.
+	
+	The label-statement associative map $\mathcal{S}$ is a set of 2-tuples $\{ (l_1, s_1), (l_2, s_2), ..., (l_n, s_n) \}, l_N \in L, s_n \in S$ where $l_n, s_n$ are the statement labels and the associated statements respectively. Then we can define the map lookup function $\eta: L \to S_{\bot}$ where $S_{\bot} = S \ \cup \ \{ \mathbf{term} \}$:
+	
+	
+	\begin{align*}
+		\eta(l) = 
+		\begin{cases}
+			s, & \text{if} (l, s) \in \mathcal{S} \\
+			\mathbf{term}, & \text{otherwise}
+		\end{cases}
+	\end{align*}
+	
+	which then seemingly allows us to define the semantics for defining statement labels and the $\mathbf{goto}$ statement:
+	
+	\begin{align*}
+		\llbracket l: s \rrbracket \sigma &= \mathcal{S} \leftarrow \mathcal{S} \ \cup \ \{ (l, s) \}; \llbracket s \rrbracket \sigma\ \\
+		\llbracket \mathbf{goto} \ l \rrbracket \sigma &= \llbracket \eta(l) \rrbracket \sigma
+	\end{align*}
+	
+	The semantics seem like it would check out, but there is one critical problem: forward jumps. Suppose we have the following code:
+	
+	\begin{verbatim}
+		n = 5;
+		sum = 0;
+		loop: ifelse(n == 0, goto end, skip);  # sum from 1 to 5
+		sum = sum + n;
+		goto loop
+		end: skip
+	\end{verbatim}
+	
+	Here the $\mathbf{goto} \ \text{end}$ statement is referencing the statement label \text{end} which hasn't yet been collected per the semantics of label designation, leading to $\mathcal{S} = \varnothing$ when evaluating the $\mathbf{ifelse}$ statement. This will lead to the program terminating which can't be seen as wrong per se, but poses grave restrictions on what procedures can be expressed.
+	
+	The treatment of jump statements within denotational statements are normally handled with \emph{continuations}, which pass along not only the program state $\sigma$, but also a sequence of statements to be executed after the execution of the current statement. The statement is free to modify the continuation which in turn modifies the control flow.
+	
+	I chose not to install the $\mathbf{goto}$ statement within $\mathbb{Z}$ahlen.
+	
+	\subsubsection{Transitional Semantics}
+	
+	\subsubsection{ordered rule tex}
+	
+	\begin{align*}
+		\text{Modus Ponens} & \quad \frac{A \ \ A \implies B}{B} 
+		&  \text{Modus Tollens} & \quad \frac{\neg B \ \ A \implies B}{\neg A} \\
+		Out_{C} & \quad\frac{v = \llbracket e\rrbracket}{\langle c!e.P,\rho\rangle\xrightarrow{e!v}\langle P,\rho\rangle} & Inp_{Q} & \quad\frac{r\not\in qv(x?q.P)}{\langle c?q.P,\rho\rangle\xrightarrow{c?r}\langle P\{r/q\},\rho\rangle}
+	\end{align*}
+	
+	\subsection{typesetting commands}
+	
+	\begin{align*}
+		\text{Command} \\
+		\mathrm{Command} \\
+		\mathbf{Command} \\
+		\mathsf{Command}
+	\end{align*}
+	
+	An associative array $A[K, V]$ is a 3-tuple $(K, V, \mathcal{D})$ where $K$ is a set of keys, $V$ a set of values, and $D$ a set of ordered pairs $(k, v)$ where $v$ is the value associated to key $k$. Then the functions $\mathsf{lookup}(A, k)$ and $\mathsf{insert}(A, k, v)$ can be defined as the following:
+	
+	\begin{align*}
+		\llbracket \mathsf{lookup}(A, k) \rrbracket \sigma &= a
+	\end{align*}
+	
+	\section{Abstract Interpretation}
+	
+	The concrete semantics declared through denotational semantics will be used for value abstraction. In $\mathbb{Z}$ahlen static analysis, array indexing errors are detected through the denotational-interval semantics pair, whereas reachability analysis would use the transitional and program label-wise abstraction pair.
+	
+	\section{Analysis Coverage}
+	
+	In this chapter we describe the specific analysis goals the static analyzer achieves.
+	
+	\subsection{Out-of-bounds Array Indexing Error}
+	
+	Zahlen's static analyzer will detect out-of-bounds array indexing errors. The analyzer guarantees soundness, meaning the analysis result being positive for index errors will always indicate the error exists within the code.
+	
+	Zahlen uses the interval abstract domain defined on top of the concrete semantics, which approximates the valid indexing range for defined multidimensional arrays and any array access operations.
+	
+	\subsubsection{Abstract Domain}
+	
+	An integer interval is defined as a pair of integers which denote all integers that satisfy the following:
+	
+	$$ [a, b]  = \{ a \leq n \leq b, n \in \mathbb{Z} \}$$
+	
+	Interval arithmetic is defined as the following:
+	\begin{align*}
+		[a, b] + [c, d] &= [a + c, b + d] \\
+		[a,  b] - [c, d] &= [a - c, b - d] \\
+		[a, b] \times [c, d] &= [ \mathrm{min}(ab, ad, bc, bd), \mathrm{max}(ab, ad, bc, bd) ] 
+	\end{align*}
+	
+	We now define the abstraction function $\alpha: C \to A$ along the concrete semantics of $\mathbb{Z}$ahlen:
+	
+	\begin{align*}
+		content...
+	\end{align*}
+
+	
+\end{document}

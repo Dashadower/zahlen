@@ -1,5 +1,6 @@
 @@grammar::Zahlen
 @@eol_comments :: /#.*?$/
+@@parseinfo :: True
 
 start::Program = { statements+:statements }+ $;
 
