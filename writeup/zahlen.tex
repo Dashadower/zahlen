@@ -56,7 +56,7 @@
 	
 	My initial decision was to evade defining loops(primarily $\mathbf{while}$ loops) because the denotational semantics for them require a fixpoint-semantics declaration, which would be non-trivial to mechanically analyze. Instead, loops would be purely a syntactic construct and were expected to be rewritten to a combination of $\mathbf{ifelse}$ and $\mathbf{goto}$ statements. Much like what you would see in assembly, the $\mathbf{goto} \ l$ statement unconditionally jumps to a statement with label $l$.
 	
-	The label-statement associative map $\mathcal{S}$ is a set of 2-tuples $\{ (l_1, s_1), (l_2, s_2), ..., (l_n, s_n) \}, l_N \in L, s_n \in S$ where $l_n, s_n$ are the statement labels and the associated statements respectively. Then we can define the map lookup function $\eta: L \to S_{\bot}$ where $S_{\bot} = S \ \cup \ \{ \mathbf{term} \}$:
+	The label-statement associative map $\mathcal{S}$ is a set of 2-tuples $\{ (l_1, s_1), (l_2, s_2), ..., (l_n, s_n) \}, l_N \in L, s_n \in S$ where $l_n, s_n$ are the statement labels and the associated statements respectively. Then we can define the map lookup function $\eta: L \to S^{*}$ where $S^{*} = S \ \cup \ \{ \mathbf{term} \}$:
 	
 	
 	\begin{align*}
@@ -74,7 +74,7 @@
 		\llbracket \mathbf{goto} \ l \rrbracket \sigma &= \llbracket \eta(l) \rrbracket \sigma
 	\end{align*}
 	
-	The semantics seem like it would check out, but there is one critical problem: forward jumps. Suppose we have the following code:
+	The semantics at a glance appear to work out, but there is one critical problem: forward jumps. Suppose we have the following code:
 	
 	\begin{verbatim}
 		n = 5;
@@ -87,7 +87,7 @@
 	
 	Here the $\mathbf{goto} \ \text{end}$ statement is referencing the statement label \text{end} which hasn't yet been collected per the semantics of label designation, leading to $\mathcal{S} = \varnothing$ when evaluating the $\mathbf{ifelse}$ statement. This will lead to the program terminating which can't be seen as wrong per se, but poses grave restrictions on what procedures can be expressed.
 	
-	The treatment of jump statements within denotational semantics are normally handled with \emph{continuations}, which pass along not only the program state $\sigma$, but also a sequence of statements to be executed after the execution of the current statement. The statement is free to modify the continuation which in turn modifies the control flow.
+	The treatment of jump statements within denotational semantics are normally handled with \emph{continuations}, which pass along not only the program state $\sigma$, but also a sequence of statements to be executed after the execution of the current statement. The executing statement is free to modify the continuation which in turn modifies the control flow.
 	
 	I chose not to install the $\mathbf{goto}$ statement within $\mathbb{Z}$ahlen.
 	
