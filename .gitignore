@@ -4,7 +4,6 @@ venv/
 
 *.aux
 *.log
-*.pdf
 *.gz
 
 .DS_Store

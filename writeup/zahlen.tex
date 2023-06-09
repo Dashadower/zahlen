@@ -22,16 +22,18 @@
 	TBC
 	
 	\section{Syntax}
-	move bnf stuff here
+	
+	For the full specification of the syntax, please refer to \texttt{grammar/zahlen.ebnf}.
+	
 	\section{Semantics}
 	
 	In this section, we discuss the denotational and transitional semantics of $\mathbb{Z}$ahlen, which is required to write a sound static analyzer.
 	
 	\subsection{Denotational Semantics}
 	
-	We define $\llbracket \mathbf{stmt} \rrbracket \sigma$ as the denotational semantics of statement $\mathbf{stmt}$ under state $\sigma$.
+	We define $\llbracket \mathbf{stmt} \rrbracket \sigma$ as the denotational semantics of statement $\mathbf{stmt}$ under state $\sigma \in \Sigma$. Note that $\Sigma_{\bot} = \Sigma \ \cup \ \bot$ indicates the set of states augmented with $\bot$ representating non-termination.
 	
-	The semantics for basic statements are defined as follows:
+	The denotational semantics for $\mathbb{Z}$ahlen statements are defined as follows:
 	
 	\begin{align*}
 			\llbracket v = e \rrbracket \sigma &= [\sigma \ | \ v: \llbracket e \rrbracket \sigma] \\
@@ -39,17 +41,15 @@
 			\\
 			\llbracket \mathbf{ifelse}(e, s_1, s_2) \rrbracket \sigma &=
 			\begin{cases}
-				\llbracket s_1 \rrbracket \sigma, & \text{if} \ \llbracket e \rrbracket \\
+				\llbracket s_1 \rrbracket \sigma, & \text{if} \ \llbracket e \rrbracket \sigma \\
 				\llbracket s_2 \rrbracket \sigma, & \text{otherwise}
-			\end{cases}
-			\\
-			\llbracket s_1 ; s_2 \rrbracket &=
+			\end{cases} \\
+			\llbracket s_1 ; s_2 \rrbracket \sigma &=
 			\begin{cases}
 				(\llbracket s_2 \rrbracket)(\llbracket s_1 \rrbracket \sigma), & \text{if} \ \llbracket s_1 \rrbracket \sigma \neq \bot \\
 				\bot, & \text{otherwise}
-			\end{cases}
-			\\
-			\llbracket \mathbf{term} \rrbracket &= \bot
+			\end{cases} \\
+			\llbracket \mathbf{while} (e) \{ s \} \rrbracket \sigma &= \text{lfp}_{\sigma}(\text{if} \ \llbracket e \rrbracket \sigma \  \text{then} \ \llbracket s \rrbracket \sigma \ \text{else} \  \sigma) \ \text{where } \text{lfp}_{\sigma}: (\Sigma_{\bot} \to \Sigma_{\bot}) \to \Sigma_{\bot}
 	\end{align*}
 	
 	\subsubsection{Why $\mathbf{goto}$ statements are problematic}
@@ -87,7 +87,7 @@
 	
 	Here the $\mathbf{goto} \ \text{end}$ statement is referencing the statement label \text{end} which hasn't yet been collected per the semantics of label designation, leading to $\mathcal{S} = \varnothing$ when evaluating the $\mathbf{ifelse}$ statement. This will lead to the program terminating which can't be seen as wrong per se, but poses grave restrictions on what procedures can be expressed.
 	
-	The treatment of jump statements within denotational statements are normally handled with \emph{continuations}, which pass along not only the program state $\sigma$, but also a sequence of statements to be executed after the execution of the current statement. The statement is free to modify the continuation which in turn modifies the control flow.
+	The treatment of jump statements within denotational semantics are normally handled with \emph{continuations}, which pass along not only the program state $\sigma$, but also a sequence of statements to be executed after the execution of the current statement. The statement is free to modify the continuation which in turn modifies the control flow.
 	
 	I chose not to install the $\mathbf{goto}$ statement within $\mathbb{Z}$ahlen.
 	
